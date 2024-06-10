@@ -6,6 +6,7 @@ import acoustid
 import music_tag
 from musixmatch import Musixmatch
 import musicbrainzngs
+import requests
 
 # Directory containing the audio files
 directory = './static/uploads/'
@@ -19,6 +20,41 @@ musicbrainzngs.set_useragent("FlaskAudioTagger", "0.1")
 def get_lyrics(mbid):
     print(musixmatch.track_lyrics_get(mbid))
     return musixmatch.track_lyrics_get(mbid)
+
+def get_cover_art_url(mbid):
+    try:
+        # Get the release group for the recording to find the album
+        recording = musicbrainzngs.get_recording_by_id(mbid, includes=["releases"])
+        release_id = recording['recording']['release-list'][0]['id']
+        
+        # Fetch cover art from the Cover Art Archive
+        cover_art_url = f"http://coverartarchive.org/release/{release_id}/front"
+        response = requests.get(cover_art_url)
+        
+        if response.status_code == 200:
+            return cover_art_url
+        else:
+            return "Cover art not found"
+    except musicbrainzngs.ResponseError as e:
+        print(f"MusicBrainz error: {e}")
+        return None
+
+def download_image(url, save_path):
+    try:
+        # Send a GET request to the URL
+        response = requests.get(url)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Open a local file with write-binary mode
+            with open(save_path, 'wb') as file:
+                # Write the content of the response (the image) to the file
+                file.write(response.content)
+            print(f"Image successfully downloaded: {save_path}")
+        else:
+            print(f"Failed to retrieve image. HTTP Status code: {response.status_code}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 def get_album_name(recording_id):
     try:
@@ -94,6 +130,14 @@ for filename in os.listdir(directory):
     print(artist_list)
     print(title_list)
     print(get_lyrics(rid_list[0]))
+    img_url = get_cover_art_url(rid_list[0])
+    download_image(img_url, './static/artwork/art')
+
+    with open('./static/artwork/art', 'rb') as img_in:
+        f['artwork'] = img_in.read()
+    
+    art = f['artwork']
+    art.first.thumbnail([64,64])
     f['artist'] = artist_list[0]
     f['title'] = title_list[0]
     f['album'] = album_list[0]
