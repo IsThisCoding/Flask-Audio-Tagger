@@ -52,6 +52,11 @@ def download_file():
             os.unlink(os.path.join(root, f))
         for d in dirs:
             shutil.rmtree(os.path.join(root, d))
+    for root, dirs, files in os.walk('./static/artwork/'):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
 
     return download
     
