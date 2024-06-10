@@ -98,7 +98,8 @@ for filename in os.listdir(directory):
     f['title'] = title_list[0]
     f['album'] = album_list[0]
     f['year'] = get_release_year(rid_list[0])
-    f['lyrics'] = get_lyrics(rid_list[0])
+    f['lyrics'] = musixmatch.matcher_lyrics_get(title_list[0], artist_list[0])['message']
+
     print(f)
     f.save()
 
